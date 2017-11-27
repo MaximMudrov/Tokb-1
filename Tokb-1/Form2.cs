@@ -14,65 +14,44 @@ using System.Text.RegularExpressions;
 
 namespace PassAuth
 {
-    
-
-    public partial class Form1 : Form
+    public partial class Form2 : Form
     {
-        public Form1()
+        public static key kl;
+
+        public Form2(key Key)
         {
             InitializeComponent();
-            FileInfo fileInf = new FileInfo("pass.txt");
-            if (fileInf.Exists)
-                groupBox1.Visible = true;
+            kl = Key;
         }
 
         private int i = 3;
 
         private void button1_Click(object sender, EventArgs e)
         {
-            string pas = textBox1.Text;
+            string oldpas = textBox1.Text;
+            string newpas = textBox2.Text;
             string pass;
-            FileInfo fileInf = new FileInfo("pass.txt");
-            if (fileInf.Exists)
+            FileStream file = new FileStream("pass.txt", FileMode.Open);
+            StreamReader reader = new StreamReader(file);
+            pass = reader.ReadLine();
+            reader.Close();
+            oldpas = Encode(oldpas, kl.Val);
+            if (pass == oldpas)
             {
-                FileStream file = new FileStream("pass.txt", FileMode.Open);
-                StreamReader reader = new StreamReader(file);
-                pass = reader.ReadLine();
-                reader.Close();
-                key Key = new key();
-                Key.Val = textBox2.Text;
-                pas = Encode(pas, Key.Val);
-                if (pas == pass)
-                {
-                    Form ifrm = new Form2(Key);
-                    ifrm.Show();
-                    this.Hide();
-                }
-                else
-                {
-                    i--;
-                    MessageBox.Show("Wrong password or key! You have "+i+" chances!");
-                }
+                FileStream wfile = new FileStream("pass.txt", FileMode.Truncate);
+                StreamWriter writer = new StreamWriter(wfile);
+                Random rnd = new Random();
+                int i = 1 + rnd.Next(100);
+                newpas = Encode(newpas, GenerateKeyWord(newpas.Length, i));
+                writer.WriteLine(newpas);
+                writer.Close();
+                MessageBox.Show("Your new key: " + GenerateKeyWord(newpas.Length, i));
+                kl.Val = GenerateKeyWord(newpas.Length, i);
             }
             else
             {
-                FileStream file = new FileStream("pass.txt", FileMode.Create);
-                StreamWriter writer = new StreamWriter(file);
-                Random rnd = new Random();
-                int i = 1 + rnd.Next(100);
-                pas = Encode(pas, GenerateKeyWord(pas.Length, i));
-                writer.WriteLine(pas);
-                MessageBox.Show("Your key: " + GenerateKeyWord(pas.Length, i));
-                writer.Close();
-                key Key = new key();
-                Key.Val = GenerateKeyWord(pas.Length, i);
-                Form ifrm = new Form2(Key);
-                ifrm.Show();
-                this.Hide();
-            }
-            if (i==0)
-            {
-                this.Close();
+                i--;
+                MessageBox.Show("Wrong password or key! You have " + i + " chances!");
             }
         }
 
@@ -102,7 +81,6 @@ namespace PassAuth
                 if ((keyword_index + 1) == keyword.Length)
                     keyword_index = 0;
             }
-
             return result;
         }
 
@@ -118,19 +96,9 @@ namespace PassAuth
             return result;
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void Form2_FormClosing(object sender, FormClosingEventArgs e)
         {
-
-        }
-    }
-
-    public class key
-    {
-        private string val;
-        public string Val
-        {
-            get { return val; }
-            set { val = value; }
+            Application.Exit();
         }
     }
 }
