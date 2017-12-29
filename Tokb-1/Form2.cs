@@ -28,17 +28,17 @@ namespace PassAuth
 
         private void button1_Click(object sender, EventArgs e)
         {
-            string oldpas = textBox1.Text;
+            /*string oldpas = textBox1.Text;
             string newpas = textBox2.Text;
             string pass;
-            FileStream file = new FileStream("pass.txt", FileMode.Open);
+            FileStream file = new FileStream(kl.Dir + "pass.txt", FileMode.Open);
             StreamReader reader = new StreamReader(file);
             pass = reader.ReadLine();
             reader.Close();
             oldpas = Encode(oldpas, kl.Val);
             if (pass == oldpas)
             {
-                FileStream wfile = new FileStream("pass.txt", FileMode.Truncate);
+                FileStream wfile = new FileStream(kl.Dir + "pass.txt", FileMode.Truncate);
                 StreamWriter writer = new StreamWriter(wfile);
                 Random rnd = new Random();
                 int i = 1 + rnd.Next(100);
@@ -52,6 +52,77 @@ namespace PassAuth
             {
                 i--;
                 MessageBox.Show("Wrong password or key! You have " + i + " chances!");
+            }*/
+
+            string oldpas = textBox1.Text;
+            string newpas = textBox2.Text;
+            string drive = "\\\\.\\" + kl.Dir;
+            string codpass = Encode(oldpas, kl.Val); ;//кодирование пароля
+            byte[] ByteBuffer = new byte[512];//задаем размер буфера
+            byte[] temp = new byte[8];
+            bool flag = true;
+            FileReader fr = new FileReader();
+            if (fr.OpenRead(drive)) //вызов для чтения
+            {
+                int count = fr.Read(ByteBuffer, 512);
+
+                for (int i = 54; i < 62; i++)
+                {
+                    temp[i - 54] = ByteBuffer[i];
+                }
+                fr.Close();
+
+                byte[] oldpass = new byte[8];
+                for (int i = 0; i < codpass.Length; i++)
+                {
+                    oldpass[i] = (byte)codpass[i];
+                }
+
+                for (int i = 0; i < 8; i++)
+                {
+                    if (temp[i] != oldpass[i])
+                        flag = false;
+                }
+                if (flag != false)
+                {
+                    if (fr.OpenWrite(drive))
+                    {
+                        string codnewpass;
+                        codnewpass = null;
+                        Random rnd = new Random();
+                        int l = 1 + rnd.Next(100);
+                        kl.Val = GenerateKeyWord(newpas.Length, l);
+                        MessageBox.Show("Your key: " + kl.Val);
+                        codnewpass = Encode(newpas, kl.Val);
+                        byte[] newpass = new byte[8];
+                        for (int i = 0; i < codnewpass.Length; i++)
+                        {
+                            newpass[i] = (byte)codnewpass[i];
+                        }
+                        for (int i = 54; i < 62; i++)
+                        {
+                            ByteBuffer[i] = newpass[i - 54];
+                        }
+                        fr.Write(ByteBuffer, 0, 512);
+                        this.Hide();
+                        MessageBox.Show("Пароль сменен");
+
+                        Application.Exit();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Попыток:" + i);
+                    i--;
+                    if (i <1)
+                        Application.Exit();
+                    //    codpass = null;
+                    //   temp = null;
+                    //    oldpass = null;
+                    textBox1.Clear();
+                    textBox2.Clear();
+
+                }
             }
         }
 
@@ -100,5 +171,8 @@ namespace PassAuth
         {
             Application.Exit();
         }
+
     }
+
+
 }
